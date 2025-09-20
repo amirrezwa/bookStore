@@ -45,7 +45,6 @@ function App() {
         fetchBooks();
       });
   };
-
   const deleteBook = (id) => {
     fetch(`http://localhost:5000/books/${id}`, {
       method: "DELETE",
@@ -108,10 +107,10 @@ function App() {
           fontWeight="bold"
           sx={{ mb: 3 }}
         >
-          📚 Book Store
+          Book Store 📚
         </Typography>
 
-        {/* فرم افزودن/ویرایش */}
+        {/* ADD / EDIT */}
         <form onSubmit={editingBook ? saveEdit : addBook}>
           <TextField
             fullWidth
@@ -131,7 +130,7 @@ function App() {
           />
           <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
             <Button type="submit" variant="contained" color="primary" fullWidth>
-              {editingBook ? "💾 Save Change" : "➕ Add Book"}
+              {editingBook ? "Save Change 💾" : "Add Book ➕"}
             </Button>
             {editingBook && (
               <Button
@@ -144,13 +143,13 @@ function App() {
                 color="secondary"
                 fullWidth
               >
-                ❌ Cancel
+                Cancel ❌
               </Button>
             )}
           </Box>
         </form>
 
-        {/* سرچ */}
+        {/* Search */}
         <TextField
           fullWidth
           label="🔍 Search Book..."
