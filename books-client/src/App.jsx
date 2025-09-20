@@ -10,6 +10,7 @@ import {
   IconButton,
   Box,
   Paper,
+  Divider,
 } from "@mui/material";
 import { Delete, Edit } from "@mui/icons-material";
 
@@ -82,31 +83,55 @@ function App() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 5 }}>
-      <Typography variant="h4" gutterBottom align="center">
-        📚 مدیریت کتاب‌ها
-      </Typography>
+    <Container
+      maxWidth="sm"
+      sx={{
+        mt: 2,
+        ml: 25,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <Paper
+        elevation={4}
+        sx={{
+          p: 4,
+          borderRadius: 3,
+          width: "100%",
+        }}
+      >
+        <Typography
+          variant="h4"
+          gutterBottom
+          align="center"
+          fontWeight="bold"
+          sx={{ mb: 3 }}
+        >
+          📚 Book Store
+        </Typography>
 
-      {/* فرم افزودن/ویرایش */}
-      <Paper sx={{ p: 2, mb: 3 }}>
+        {/* فرم افزودن/ویرایش */}
         <form onSubmit={editingBook ? saveEdit : addBook}>
           <TextField
             fullWidth
-            label="عنوان کتاب"
+            label="Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             margin="normal"
+            variant="outlined"
           />
           <TextField
             fullWidth
-            label="نویسنده"
+            label="Author"
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
             margin="normal"
+            variant="outlined"
           />
           <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
             <Button type="submit" variant="contained" color="primary" fullWidth>
-              {editingBook ? "💾 ذخیره تغییرات" : "➕ افزودن کتاب"}
+              {editingBook ? "💾 Save Change" : "➕ Add Book"}
             </Button>
             {editingBook && (
               <Button
@@ -119,50 +144,62 @@ function App() {
                 color="secondary"
                 fullWidth
               >
-                ❌ لغو
+                ❌ Cancel
               </Button>
             )}
           </Box>
         </form>
+
+        {/* سرچ */}
+        <TextField
+          fullWidth
+          label="🔍 Search Book..."
+          value={search}
+          onChange={searchBooks}
+          sx={{ mt: 3, mb: 2 }}
+        />
+
+        <Divider sx={{ mb: 2 }} />
+
+        {/* Book List */}
+        <List>
+          {books.map((book) => (
+            <ListItem
+              key={book.id}
+              sx={{
+                border: "1px solid #eee",
+                borderRadius: 2,
+                mb: 1,
+                bgcolor: "#fafafa",
+              }}
+              secondaryAction={
+                <>
+                  <IconButton
+                    edge="end"
+                    color="error"
+                    onClick={() => deleteBook(book.id)}
+                  >
+                    <Delete />
+                  </IconButton>
+                  <IconButton
+                    edge="end"
+                    color="primary"
+                    onClick={() => startEdit(book)}
+                  >
+                    <Edit />
+                  </IconButton>
+                </>
+              }
+            >
+              <ListItemText
+                primary={book.title}
+                secondary={book.author}
+                primaryTypographyProps={{ fontWeight: "bold" }}
+              />
+            </ListItem>
+          ))}
+        </List>
       </Paper>
-
-      {/* سرچ */}
-      <TextField
-        fullWidth
-        label="🔍 جست‌وجوی کتاب..."
-        value={search}
-        onChange={searchBooks}
-        sx={{ mb: 3 }}
-      />
-
-      {/* لیست کتاب‌ها */}
-      <List>
-        {books.map((book) => (
-          <ListItem
-            key={book.id}
-            secondaryAction={
-              <>
-                <IconButton
-                  edge="end"
-                  color="error"
-                  onClick={() => deleteBook(book.id)}
-                >
-                  <Delete />
-                </IconButton>
-                <IconButton
-                  edge="end"
-                  color="primary"
-                  onClick={() => startEdit(book)}
-                >
-                  <Edit />
-                </IconButton>
-              </>
-            }
-          >
-            <ListItemText primary={book.title} secondary={book.author} />
-          </ListItem>
-        ))}
-      </List>
     </Container>
   );
 }
