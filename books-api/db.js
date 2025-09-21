@@ -9,14 +9,35 @@ const pool = new Pool({
 });
 
 // // Create table if it doesn't exist
+// server.js (یا یک فایل جدا مثل db.js)
 (async () => {
+  // جدول کتاب‌ها
   await pool.query(`
-     CREATE TABLE IF NOT EXISTS books (
-       id UUID PRIMARY KEY,
-       title TEXT NOT NULL,
-       author TEXT NOT NULL
-     )
-   `);
+    CREATE TABLE IF NOT EXISTS books (
+      id UUID PRIMARY KEY,
+      title TEXT NOT NULL,
+      author TEXT NOT NULL
+    )
+  `);
+
+  // جدول کاربران (موقتی اگر از دیتابیس استفاده نکردیم، optional)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      email TEXT PRIMARY KEY,
+      password TEXT NOT NULL,
+      role TEXT NOT NULL
+    )
+  `);
+
+  // جدول قرض گرفتن کتاب‌ها
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS borrowed_books (
+      id UUID PRIMARY KEY,
+      user_email TEXT REFERENCES users(email),
+      book_id UUID REFERENCES books(id),
+      borrowed_at TIMESTAMP DEFAULT NOW()
+    )
+  `);
 })();
 
 async function getAllBooks() {
