@@ -1,11 +1,8 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-let users = []; // بعدا میره تو دیتابیس
+let users = [];
 
-const SECRET = "mysecret"; // حتما توی .env بذار
-
-// ثبت نام
 async function register(req, res) {
   const { email, password, role } = req.body;
 
@@ -15,10 +12,8 @@ async function register(req, res) {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // ⚠️ فقط ادمین‌ها دستی اضافه بشن، نه هر کسی
   let userRole = "user";
   if (role === "admin") {
-    // مثلا بگیم فقط وقتی ایمیل خاصی باشه اجازه بده ادمین بشه
     if (email === "admin@example.com") {
       userRole = "admin";
     } else {
@@ -37,7 +32,6 @@ async function register(req, res) {
   });
 }
 
-// لاگین
 async function login(req, res) {
   const { email, password } = req.body;
 
@@ -51,7 +45,6 @@ async function login(req, res) {
     return res.status(400).json({ message: "Invalid credentials" });
   }
 
-  // ساخت JWT همراه role
   const token = jwt.sign({ email: user.email, role: user.role }, SECRET, {
     expiresIn: "1h",
   });
@@ -59,7 +52,7 @@ async function login(req, res) {
   res.json({ token, role: user.role });
 }
 
-// Middleware برای محافظت
+// Middleware
 function authenticate(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -73,7 +66,7 @@ function authenticate(req, res, next) {
   });
 }
 
-// Middleware برای نقش
+// Middleware
 function authorize(roles = []) {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -84,3 +77,5 @@ function authorize(roles = []) {
 }
 
 module.exports = { register, login, authenticate, authorize };
+
+//admin@example.com

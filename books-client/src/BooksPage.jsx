@@ -1,4 +1,3 @@
-// src/BooksPage.js
 import { useEffect, useState } from "react";
 import {
   Container,
@@ -26,35 +25,29 @@ function BooksPage() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  // fetch books
   const fetchBooks = () => {
     fetch("http://localhost:5000/books", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => setBooks(data))
-      .catch((err) => console.error("Error fetching books:", err));
+      .catch((err) => console.error(err));
   };
 
-  useEffect(() => {
-    fetchBooks();
-  }, []);
+  useEffect(() => fetchBooks(), []);
 
-  // add book
   const addBook = (e) => {
     e.preventDefault();
     setError("");
 
-    const exists = books.some(
-      (b) =>
-        b.title.trim().toLowerCase() === title.trim().toLowerCase() &&
-        b.author.trim().toLowerCase() === author.trim().toLowerCase()
-    );
-
-    if (exists) {
-      setError("این کتاب قبلاً اضافه شده 📕");
+    if (
+      books.some(
+        (b) =>
+          b.title.toLowerCase() === title.toLowerCase() &&
+          b.author.toLowerCase() === author.toLowerCase()
+      )
+    ) {
+      setError("This book has already been added 📕");
       return;
     }
 
@@ -65,51 +58,39 @@ function BooksPage() {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ title, author }),
-    })
-      .then((res) => res.json())
-      .then(() => {
-        setTitle("");
-        setAuthor("");
-        fetchBooks();
-      });
+    }).then(() => {
+      setTitle("");
+      setAuthor("");
+      fetchBooks();
+    });
   };
 
-  // delete book
   const deleteBook = (id) => {
     fetch(`http://localhost:5000/books/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then(() => fetchBooks())
-      .catch((err) => console.error("Error deleting book:", err));
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(() => fetchBooks());
   };
 
-  // start editing
   const startEdit = (book) => {
     setEditingBook(book.id);
     setTitle(book.title);
     setAuthor(book.author);
   };
-
-  // save edit
   const saveEdit = (e) => {
     e.preventDefault();
     setError("");
-
-    const exists = books.some(
-      (b) =>
-        b.id !== editingBook &&
-        b.title.trim().toLowerCase() === title.trim().toLowerCase() &&
-        b.author.trim().toLowerCase() === author.trim().toLowerCase()
-    );
-
-    if (exists) {
+    if (
+      books.some(
+        (b) =>
+          b.id !== editingBook &&
+          b.title.toLowerCase() === title.toLowerCase() &&
+          b.author.toLowerCase() === author.toLowerCase()
+      )
+    ) {
       setError("این کتاب قبلاً وجود دارد 📕");
       return;
     }
-
     fetch(`http://localhost:5000/books/${editingBook}`, {
       method: "PUT",
       headers: {
@@ -117,34 +98,24 @@ function BooksPage() {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ title, author }),
-    })
-      .then((res) => res.json())
-      .then(() => {
-        setEditingBook(null);
-        setTitle("");
-        setAuthor("");
-        fetchBooks();
-      });
+    }).then(() => {
+      setEditingBook(null);
+      setTitle("");
+      setAuthor("");
+      fetchBooks();
+    });
   };
 
-  // search
   const searchBooks = (e) => {
     const query = e.target.value;
     setSearch(query);
-
-    if (query.trim() === "") {
-      fetchBooks();
-      return;
-    }
+    if (!query.trim()) return fetchBooks();
 
     fetch(`http://localhost:5000/books/search/${query}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => setBooks(data))
-      .catch((err) => console.error("Error searching books:", err));
+      .then((data) => setBooks(data));
   };
 
   return (
@@ -152,19 +123,13 @@ function BooksPage() {
       maxWidth="sm"
       sx={{
         mt: 2,
+        ml: 25,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
       }}
     >
-      <Paper
-        elevation={4}
-        sx={{
-          p: 4,
-          borderRadius: 3,
-          width: "100%",
-        }}
-      >
+      <Paper elevation={4} sx={{ p: 4, borderRadius: 3, width: "100%" }}>
         <Typography
           variant="h4"
           gutterBottom
@@ -174,15 +139,12 @@ function BooksPage() {
         >
           Book Store 📚
         </Typography>
-
-        {/* Error */}
         {error && (
           <Typography color="error" align="center" sx={{ mb: 2 }}>
             {error}
           </Typography>
         )}
 
-        {/* Add / Edit → فقط برای ادمین */}
         {role === "admin" && (
           <form onSubmit={editingBook ? saveEdit : addBook}>
             <TextField
@@ -191,7 +153,6 @@ function BooksPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               margin="normal"
-              variant="outlined"
               required
             />
             <TextField
@@ -200,7 +161,6 @@ function BooksPage() {
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
               margin="normal"
-              variant="outlined"
               required
             />
             <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
@@ -230,7 +190,6 @@ function BooksPage() {
           </form>
         )}
 
-        {/* Search */}
         <TextField
           fullWidth
           label="🔍 Search Book..."
@@ -238,14 +197,12 @@ function BooksPage() {
           onChange={searchBooks}
           sx={{ mt: 3, mb: 2 }}
         />
-
         <Divider sx={{ mb: 2 }} />
 
-        {/* List */}
         <List>
           {books.length === 0 ? (
             <Typography align="center" color="text.secondary">
-              کتابی یافت نشد 📭
+              Book NOT found 📭
             </Typography>
           ) : (
             books.map((book) => (

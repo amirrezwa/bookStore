@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // 👈 یادت نره
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   TextField,
@@ -14,10 +14,11 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [message, setMessage] = useState("");
-  const navigate = useNavigate(); // 👈 برای ریدایرکت
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
 
     const url = isLogin
       ? "http://localhost:5000/auth/login"
@@ -31,32 +32,33 @@ function AuthPage() {
           role: email === "admin@example.com" ? "admin" : "user",
         };
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
 
-    const data = await res.json();
-    console.log("Response:", res.status, data);
-
-    if (res.ok) {
-      if (isLogin) {
-        console.log("Login success, navigating..."); // 👈 تست
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role);
-        navigate("/books");
+      if (res.ok) {
+        if (isLogin) {
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("role", data.role);
+          navigate("/books");
+        } else {
+          setMessage("Registered successfully ✅");
+        }
       } else {
-        setMessage("Registered successfully ✅");
+        setMessage(data.message || "Error");
       }
-    } else {
-      console.log("Login failed:", data); // 👈 تست
-      setMessage(data.message || "Error");
+    } catch (err) {
+      setMessage("Server error ❌");
+      console.error(err);
     }
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 5 }}>
+    <Container maxWidth="sm" sx={{ mt: 3, ml: 25 }}>
       <Paper sx={{ p: 4, borderRadius: 2 }}>
         <Typography variant="h5" align="center" gutterBottom>
           {isLogin ? "Login 🔐" : "Register 📝"}
