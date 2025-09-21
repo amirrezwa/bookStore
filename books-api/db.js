@@ -61,9 +61,6 @@ async function searchBooks(query) {
   return result.rows;
 }
 
-// for JWT
-const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey"; // بهتره تو .env بذاری
-
 module.exports = {
   getAllBooks,
   getBookById,

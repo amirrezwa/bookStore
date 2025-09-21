@@ -1,57 +1,101 @@
-const { v4: uuidv4 } = require("uuid");
-const db = require("./db");
+// controllers/books.controller.js
+const express = require("express");
+const router = express.Router();
+const authenticate = require("../middleware/authenticate"); // middleware احراز هویت
 
-function setup(app) {
-  // Get all books
-  app.get("/books", async (req, res) => {
-    const books = await db.getAllBooks();
-    res.json(books);
-  });
+// دیتابیس موقتی (می‌تونی بعداً با PostgreSQL یا MongoDB جایگزینش کنی)
+let books = [
+  { id: 1, title: "Clean Code", author: "Robert C. Martin" },
+  { id: 2, title: "The Pragmatic Programmer", author: "Andrew Hunt" },
+];
 
-  // Get book by ID
-  app.get("/books/:id", async (req, res) => {
-    const book = await db.getBookById(req.params.id);
-    if (!book) return res.status(404).json({ message: "Book not found" });
-    res.json(book);
-  });
+// گرفتن همه کتاب‌ها
+router.get("/", authenticate, (req, res) => {
+  res.json(books);
+});
 
-  // Create new book
-  app.post("/books", async (req, res) => {
-    const { title, author } = req.body;
-    if (!title || !author)
-      return res.status(400).json({ message: "Title and author are required" });
+// جستجو در کتاب‌ها
+router.get("/search/:query", authenticate, (req, res) => {
+  const query = req.params.query.toLowerCase();
+  const results = books.filter(
+    (b) =>
+      b.title.toLowerCase().includes(query) ||
+      b.author.toLowerCase().includes(query)
+  );
+  res.json(results);
+});
 
-    const newBook = await db.createBook(uuidv4(), title, author);
-    res.status(201).json(newBook);
-  });
+// اضافه کردن کتاب (فقط admin)
+router.post("/", authenticate, (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Only admins can add books" });
+  }
 
-  // Update book
-  app.put("/books/:id", async (req, res) => {
-    const { title, author } = req.body;
-    const updatedBook = await db.updateBook(req.params.id, title, author);
-    if (!updatedBook)
-      return res.status(404).json({ message: "Book not found" });
+  const { title, author } = req.body;
 
-    res.json(updatedBook);
-  });
+  // جلوگیری از تکراری بودن
+  const exists = books.some(
+    (b) =>
+      b.title.toLowerCase() === title.toLowerCase() &&
+      b.author.toLowerCase() === author.toLowerCase()
+  );
+  if (exists) {
+    return res.status(400).json({ message: "این کتاب قبلاً وجود دارد 📕" });
+  }
 
-  // Delete book
-  app.delete("/books/:id", async (req, res) => {
-    const deletedBook = await db.deleteBook(req.params.id);
-    if (!deletedBook)
-      return res.status(404).json({ message: "Book not found" });
+  const newBook = {
+    id: books.length ? books[books.length - 1].id + 1 : 1,
+    title,
+    author,
+  };
+  books.push(newBook);
+  res.json(newBook);
+});
 
-    res.json(deletedBook);
-  });
+// ویرایش کتاب (فقط admin)
+router.put("/:id", authenticate, (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Only admins can edit books" });
+  }
 
-  // Search books
-  app.get("/books/search", async (req, res) => {
-    const { q } = req.query;
-    if (!q) return res.json(await db.getAllBooks());
+  const id = parseInt(req.params.id);
+  const { title, author } = req.body;
 
-    const results = await db.searchBooks(q);
-    res.json(results);
-  });
-}
+  const bookIndex = books.findIndex((b) => b.id === id);
+  if (bookIndex === -1) {
+    return res.status(404).json({ message: "کتاب پیدا نشد" });
+  }
 
-module.exports = { setup };
+  // چک تکراری بودن
+  const exists = books.some(
+    (b) =>
+      b.id !== id &&
+      b.title.toLowerCase() === title.toLowerCase() &&
+      b.author.toLowerCase() === author.toLowerCase()
+  );
+  if (exists) {
+    return res.status(400).json({ message: "این کتاب قبلاً وجود دارد 📕" });
+  }
+
+  books[bookIndex] = { id, title, author };
+  res.json(books[bookIndex]);
+});
+
+// حذف کتاب (فقط admin)
+router.delete("/:id", authenticate, (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Only admins can delete books" });
+  }
+
+  const id = parseInt(req.params.id);
+  const bookIndex = books.findIndex((b) => b.id === id);
+
+  if (bookIndex === -1) {
+    return res.status(404).json({ message: "کتاب پیدا نشد" });
+  }
+
+  books.splice(bookIndex, 1);
+  res.json({ message: "کتاب حذف شد ✅" });
+});
+
+module.exports = router;
