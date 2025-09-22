@@ -9,7 +9,7 @@ import {
   Box,
 } from "@mui/material";
 
-function AuthPage() {
+export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLogin, setIsLogin] = useState(true);
@@ -24,29 +24,25 @@ function AuthPage() {
       ? "http://localhost:5000/auth/login"
       : "http://localhost:5000/auth/register";
 
-    const body = isLogin
-      ? { email, password }
-      : {
-          email,
-          password,
-          role: email === "admin@example.com" ? "admin" : "user",
-        };
-
     try {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
 
+      const data = await res.json();
       if (res.ok) {
         if (isLogin) {
           localStorage.setItem("token", data.token);
           localStorage.setItem("role", data.role);
+
+          // ذخیره ایمیل user در localStorage
+          if (data.role === "user") localStorage.setItem("email", email);
+
           navigate("/books");
         } else {
-          setMessage("Registered successfully ✅");
+          setMessage("Registered ✅");
         }
       } else {
         setMessage(data.message || "Error");
@@ -58,7 +54,7 @@ function AuthPage() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 3, ml: 25 }}>
+    <Container maxWidth="sm" sx={{ mt: 3 }}>
       <Paper sx={{ p: 4, borderRadius: 2 }}>
         <Typography variant="h5" align="center" gutterBottom>
           {isLogin ? "Login 🔐" : "Register 📝"}
@@ -87,9 +83,7 @@ function AuthPage() {
         </form>
         <Box sx={{ mt: 2, textAlign: "center" }}>
           <Button onClick={() => setIsLogin(!isLogin)}>
-            {isLogin
-              ? "Need an account? Register"
-              : "Already have an account? Login"}
+            {isLogin ? "Need account? Register" : "Already have account? Login"}
           </Button>
         </Box>
         {message && (
@@ -101,5 +95,3 @@ function AuthPage() {
     </Container>
   );
 }
-
-export default AuthPage;

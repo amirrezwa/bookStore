@@ -6,8 +6,6 @@ import {
   ListItem,
   ListItemText,
   IconButton,
-  Box,
-  Paper,
   Divider,
 } from "@mui/material";
 import { Delete, Edit } from "@mui/icons-material";
