@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Typography,
@@ -24,7 +25,16 @@ function BooksPage() {
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
+  const navigate = useNavigate();
 
+  // 📌 logout
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    navigate("/");
+  };
+
+  // 📌 گرفتن کتاب‌ها
   const fetchBooks = () => {
     fetch("http://localhost:5000/books", {
       headers: { Authorization: `Bearer ${token}` },
@@ -36,6 +46,7 @@ function BooksPage() {
 
   useEffect(() => fetchBooks(), []);
 
+  // 📌 افزودن کتاب
   const addBook = (e) => {
     e.preventDefault();
     setError("");
@@ -65,6 +76,7 @@ function BooksPage() {
     });
   };
 
+  // 📌 حذف کتاب
   const deleteBook = (id) => {
     fetch(`http://localhost:5000/books/${id}`, {
       method: "DELETE",
@@ -72,14 +84,17 @@ function BooksPage() {
     }).then(() => fetchBooks());
   };
 
+  // 📌 ویرایش کتاب
   const startEdit = (book) => {
     setEditingBook(book.id);
     setTitle(book.title);
     setAuthor(book.author);
   };
+
   const saveEdit = (e) => {
     e.preventDefault();
     setError("");
+
     if (
       books.some(
         (b) =>
@@ -91,6 +106,7 @@ function BooksPage() {
       setError("این کتاب قبلاً وجود دارد 📕");
       return;
     }
+
     fetch(`http://localhost:5000/books/${editingBook}`, {
       method: "PUT",
       headers: {
@@ -106,6 +122,7 @@ function BooksPage() {
     });
   };
 
+  // 📌 جستجو
   const searchBooks = (e) => {
     const query = e.target.value;
     setSearch(query);
@@ -130,6 +147,13 @@ function BooksPage() {
       }}
     >
       <Paper elevation={4} sx={{ p: 4, borderRadius: 3, width: "100%" }}>
+        {/* 📌 دکمه خروج */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+          <Button variant="outlined" color="error" onClick={logout}>
+            🚪 Logout
+          </Button>
+        </Box>
+
         <Typography
           variant="h4"
           gutterBottom
@@ -139,6 +163,7 @@ function BooksPage() {
         >
           Book Store 📚
         </Typography>
+
         {error && (
           <Typography color="error" align="center" sx={{ mb: 2 }}>
             {error}
