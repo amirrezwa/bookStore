@@ -1,17 +1,18 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import AuthPage from "./AuthPage";
+import Navbar from "./NavBar";
 import BooksPage from "./BooksPage";
-import BorrowPage from "./BorrowPage";
-
+import UsersPage from "./UsersPage";
+import AddBookPage from "./AddBookPage";
+import AuthPage from "./AuthPage";
 function App() {
-  const role = localStorage.getItem("role");
-
   return (
     <Router>
+      <Navbar />
       <Routes>
-        <Route path="/" element={<AuthPage />} />
         <Route path="/books" element={<BooksPage />} />
-        {role === "admin" && <Route path="/borrow" element={<BorrowPage />} />}
+        <Route path="/users" element={<UsersPage />} />
+        <Route path="/add-book" element={<AddBookPage />} />
+        <Route path="/" element={<AuthPage />} />
       </Routes>
     </Router>
   );
