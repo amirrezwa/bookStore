@@ -1,12 +1,12 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Navbar from "./Navbar";
-import BooksPage from "./BooksPage";
-import UsersPage from "./UsersPage";
-import AddBookPage from "./AddBookPage";
-import BorrowPage from "./BorrowPage";
-import AuthPage from "./AuthPage";
-import BorrowedBooksPage from "./BorrowedBooksPage";
-import LentPage from "./LentPage";
+import Navbar from "./navbar/Navbar";
+import BooksPage from "./components/BooksPage";
+import UsersPage from "./components/UsersPage";
+import AddBookPage from "./components/AddBookPage";
+import BorrowPage from "./components/BorrowPage";
+import AuthPage from "./auth/AuthPage";
+import BorrowedBooksPage from "./components/BorrowedBooksPage";
+import LentPage from "./components/LentPage";
 
 function App() {
   return (

@@ -56,7 +56,7 @@ function LentPage() {
   }, {});
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
+    <Container maxWidth="md" sx={{ mt: 4, ml: 50 }}>
       <Typography variant="h4" gutterBottom>
         Lent Books — Your Lends 📚
       </Typography>

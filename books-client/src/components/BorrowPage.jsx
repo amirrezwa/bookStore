@@ -41,7 +41,7 @@ function BorrowPage() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 4 }}>
+    <Container maxWidth="sm" sx={{ mt: 4, ml: 50 }}>
       <Typography variant="h4" gutterBottom>
         Borrow Books 📚
       </Typography>

@@ -15,7 +15,10 @@ function Navbar() {
   };
 
   return (
-    <AppBar position="static">
+    <AppBar
+      position="fixed" // 👈 ثابت کردن در بالای صفحه
+      sx={{ top: 0, left: 0, right: 0 }} // 👈 اطمینان از کل عرض صفحه
+    >
       <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
         <Box>
           <Button color="inherit" onClick={() => navigate("/books")}>
@@ -40,11 +43,9 @@ function Navbar() {
           )}
 
           {role === "user" && (
-            <>
-              <Button color="inherit" onClick={() => navigate("/my-borrows")}>
-                My Borrowed
-              </Button>
-            </>
+            <Button color="inherit" onClick={() => navigate("/my-borrows")}>
+              My Borrowed
+            </Button>
           )}
         </Box>
         <Button color="inherit" onClick={logout}>

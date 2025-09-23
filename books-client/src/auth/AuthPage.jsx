@@ -50,7 +50,7 @@ export default function AuthPage() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 3 }}>
+    <Container maxWidth="sm" sx={{ mt: 3, ml: 50 }}>
       <Paper sx={{ p: 4, borderRadius: 2 }}>
         <Typography variant="h5" align="center" gutterBottom>
           {isLogin ? "Login 🔐" : "Register 📝"}
