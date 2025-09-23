@@ -36,10 +36,6 @@ export default function AuthPage() {
         if (isLogin) {
           localStorage.setItem("token", data.token);
           localStorage.setItem("role", data.role);
-
-          // ذخیره ایمیل user در localStorage
-          if (data.role === "user") localStorage.setItem("email", email);
-
           navigate("/books");
         } else {
           setMessage("Registered ✅");

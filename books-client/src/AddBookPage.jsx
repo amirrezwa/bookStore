@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Container, Typography, TextField, Button, Box } from "@mui/material";
 
-function AddBookPage({ onBookAdded }) {
+function AddBookPage() {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +26,6 @@ function AddBookPage({ onBookAdded }) {
       .then(() => {
         setTitle("");
         setAuthor("");
-        if (onBookAdded) onBookAdded();
       })
       .catch((err) => setError(err.message));
   };

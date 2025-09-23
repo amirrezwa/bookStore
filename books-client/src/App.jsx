@@ -3,7 +3,10 @@ import Navbar from "./Navbar";
 import BooksPage from "./BooksPage";
 import UsersPage from "./UsersPage";
 import AddBookPage from "./AddBookPage";
+import BorrowPage from "./BorrowPage";
 import AuthPage from "./AuthPage";
+import BorrowedBooksPage from "./BorrowedBooksPage";
+import LentPage from "./LentPage";
 
 function App() {
   return (
@@ -12,8 +15,11 @@ function App() {
       <Routes>
         <Route path="/" element={<AuthPage />} />
         <Route path="/books" element={<BooksPage />} />
-        <Route path="/users" element={<UsersPage />} />
         <Route path="/add-book" element={<AddBookPage />} />
+        <Route path="/users" element={<UsersPage />} />
+        <Route path="/borrow" element={<BorrowPage />} />
+        <Route path="/my-borrows" element={<BorrowedBooksPage />} />
+        <Route path="/lent" element={<LentPage />} />
       </Routes>
     </Router>
   );

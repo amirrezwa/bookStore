@@ -11,7 +11,6 @@ function Navbar() {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
-    localStorage.removeItem("email");
     navigate("/");
   };
 
@@ -22,13 +21,28 @@ function Navbar() {
           <Button color="inherit" onClick={() => navigate("/books")}>
             Books
           </Button>
+
           {role === "admin" && (
             <>
+              <Button color="inherit" onClick={() => navigate("/add-book")}>
+                Add Book
+              </Button>
               <Button color="inherit" onClick={() => navigate("/users")}>
                 Users
               </Button>
-              <Button color="inherit" onClick={() => navigate("/add-book")}>
-                Add Book
+              <Button color="inherit" onClick={() => navigate("/borrow")}>
+                Borrow (lend)
+              </Button>
+              <Button color="inherit" onClick={() => navigate("/lent")}>
+                Lent
+              </Button>
+            </>
+          )}
+
+          {role === "user" && (
+            <>
+              <Button color="inherit" onClick={() => navigate("/my-borrows")}>
+                My Borrowed
               </Button>
             </>
           )}

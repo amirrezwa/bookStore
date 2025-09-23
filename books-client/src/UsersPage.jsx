@@ -5,33 +5,36 @@ import {
   List,
   ListItem,
   ListItemText,
+  Button,
+  Box,
 } from "@mui/material";
 
 function UsersPage() {
   const [users, setUsers] = useState([]);
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
 
-  useEffect(() => {
-    if (role !== "admin") return;
-
+  const fetchUsers = () => {
     fetch("http://localhost:5000/auth/users", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => setUsers(data))
       .catch((err) => console.error(err));
-  }, [token, role]);
+  };
 
-  if (role !== "admin") {
-    return (
-      <Container sx={{ mt: 4 }}>
-        <Typography align="center">
-          فقط ادمین می‌تواند کاربران را ببیند ❌
-        </Typography>
-      </Container>
-    );
-  }
+  useEffect(() => fetchUsers(), []);
+
+  const toggleRole = (email, currentRole) => {
+    const newRole = currentRole === "admin" ? "user" : "admin";
+    fetch(`http://localhost:5000/auth/users/${email}/role`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ role: newRole }),
+    }).then(() => fetchUsers());
+  };
 
   return (
     <Container maxWidth="sm" sx={{ mt: 4 }}>
@@ -39,17 +42,27 @@ function UsersPage() {
         Users 👥
       </Typography>
       <List>
-        {users.length === 0 ? (
-          <Typography align="center" color="text.secondary">
-            هیچ کاربری لاگین نکرده 📭
-          </Typography>
-        ) : (
-          users.map((user) => (
-            <ListItem key={user.email}>
-              <ListItemText primary={user.email} secondary={user.role} />
-            </ListItem>
-          ))
-        )}
+        {users.map((u) => (
+          <ListItem
+            key={u.email}
+            sx={{
+              border: "1px solid #eee",
+              borderRadius: 2,
+              mb: 1,
+              bgcolor: "#fafafa",
+            }}
+          >
+            <ListItemText primary={u.email} secondary={u.role} />
+            <Box>
+              <Button
+                variant="contained"
+                onClick={() => toggleRole(u.email, u.role)}
+              >
+                Toggle Role
+              </Button>
+            </Box>
+          </ListItem>
+        ))}
       </List>
     </Container>
   );

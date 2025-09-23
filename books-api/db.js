@@ -1,26 +1,14 @@
 const { Pool } = require("pg");
-
 const pool = new Pool({
   user: process.env.DB_USER ?? "postgres",
   host: process.env.DB_HOST ?? "127.0.0.1",
-  database: process.env.DB_DATABASE ?? "postgres",
+  database: process.env.DB_DATABASE ?? "library",
   password: process.env.DB_PASSWORD ?? "postgres",
   port: process.env.DB_PORT ?? 5432,
 });
 
-// // Create table if it doesn't exist
-// server.js (یا یک فایل جدا مثل db.js)
 (async () => {
-  // جدول کتاب‌ها
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS books (
-      id UUID PRIMARY KEY,
-      title TEXT NOT NULL,
-      author TEXT NOT NULL
-    )
-  `);
-
-  // جدول کاربران (موقتی اگر از دیتابیس استفاده نکردیم، optional)
+  // جدول کاربران
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       email TEXT PRIMARY KEY,
@@ -29,64 +17,40 @@ const pool = new Pool({
     )
   `);
 
-  // جدول قرض گرفتن کتاب‌ها
+  // جدول کتاب‌ها
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS books (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      author TEXT NOT NULL
+    )
+  `);
+
+  // جدول کتاب‌های قرض گرفته شده
   await pool.query(`
     CREATE TABLE IF NOT EXISTS borrowed_books (
-      id UUID PRIMARY KEY,
+      id SERIAL PRIMARY KEY,
       user_email TEXT REFERENCES users(email),
-      book_id UUID REFERENCES books(id),
+      book_id INT REFERENCES books(id),
       borrowed_at TIMESTAMP DEFAULT NOW()
     )
   `);
+
+  // ایجاد ادمین پیش‌فرض
+  const res = await pool.query("SELECT * FROM users WHERE email = $1", [
+    "amirrezwanoori@gmail.com",
+  ]);
+  if (res.rowCount === 0) {
+    const bcrypt = require("bcrypt");
+    const hashed = await bcrypt.hash("12345678", 10);
+    await pool.query(
+      "INSERT INTO users(email, password, role) VALUES($1, $2, 'admin')",
+      ["amirrezwanoori@gmail.com", hashed]
+    );
+    console.log(
+      "✅ Default admin created: amirrezwanoori@gmail.com / 12345678"
+    );
+  }
 })();
 
-async function getAllBooks() {
-  const result = await pool.query("SELECT * FROM books");
-  return result.rows;
-}
-
-async function getBookById(id) {
-  const result = await pool.query("SELECT * FROM books WHERE id = $1", [id]);
-  return result.rows[0];
-}
-
-async function createBook(id, title, author) {
-  const result = await pool.query(
-    "INSERT INTO books (id, title, author) VALUES ($1, $2, $3) RETURNING *",
-    [id, title, author]
-  );
-  return result.rows[0];
-}
-
-async function updateBook(id, title, author) {
-  const result = await pool.query(
-    "UPDATE books SET title = $1, author = $2 WHERE id = $3 RETURNING *",
-    [title, author, id]
-  );
-  return result.rows[0];
-}
-
-async function deleteBook(id) {
-  const result = await pool.query(
-    "DELETE FROM books WHERE id = $1 RETURNING *",
-    [id]
-  );
-  return result.rows[0];
-}
-
-async function searchBooks(query) {
-  const result = await pool.query(
-    "SELECT * FROM books WHERE LOWER(title) LIKE $1 OR LOWER(author) LIKE $1",
-    [`%${query.toLowerCase()}%`]
-  );
-  return result.rows;
-}
-
-module.exports = {
-  getAllBooks,
-  getBookById,
-  createBook,
-  updateBook,
-  deleteBook,
-  searchBooks,
-};
+module.exports = pool;
