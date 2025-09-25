@@ -11,12 +11,10 @@ app.use(bodyParser.json());
 
 const SECRET = "my_secret_key";
 
-// دیتابیس ساده در حافظه
 let users = [];
 let books = [];
 let borrowedBooks = [];
 
-// ایجاد ادمین پیش‌فرض
 async function createDefaultAdmin() {
   const email = "amirrezwanoori@gmail.com";
   const password = "12345678";
@@ -24,7 +22,7 @@ async function createDefaultAdmin() {
   if (!users.find((u) => u.email === email)) {
     const hashedPassword = await bcrypt.hash(password, 10);
     users.push({ email, password: hashedPassword, role: "admin" });
-    console.log("✅ Default admin created:", email, "password:", password);
+    console.log("Default admin created");
   }
 }
 
@@ -73,7 +71,7 @@ app.post("/auth/login", async (req, res) => {
   const token = jwt.sign({ email: user.email, role: user.role }, SECRET, {
     expiresIn: "1h",
   });
-  res.json({ token, role: user.role });
+  res.json({ token, role: user.role, email: user.email });
 });
 
 // گرفتن لیست کاربران (فقط admin)
@@ -139,6 +137,7 @@ app.delete("/books/:id", authenticate, authorize(["admin"]), (req, res) => {
 
 // قرض دادن کتاب
 // برای ذخیره، lender_email و borrowed_at اضافه میشه
+// قرض دادن کتاب (یک کتاب فقط یک نفر می‌تواند قرض بگیرد)
 app.post("/books/borrow", authenticate, authorize(["admin"]), (req, res) => {
   const { userEmail, bookId } = req.body;
   const book = books.find((b) => b.id === bookId);
@@ -146,12 +145,19 @@ app.post("/books/borrow", authenticate, authorize(["admin"]), (req, res) => {
   if (!book || !user)
     return res.status(404).json({ message: "Book or user not found" });
 
+  // چک می‌کنیم که کتاب هنوز برگشت داده نشده قرض شده نباشد
+  const isCurrentlyBorrowed = borrowedBooks.some(
+    (b) => b.bookId === bookId && b.returned === false
+  );
+  if (isCurrentlyBorrowed)
+    return res.status(400).json({ message: "Book is already borrowed" });
+
   borrowedBooks.push({
     id: uuidv4(),
     bookId,
     title: book.title,
     user_email: userEmail,
-    lender_email: req.user.email, // اضافه شد
+    lender_email: req.user.email,
     returned: false,
     borrowed_at: new Date().toISOString(),
   });
@@ -192,5 +198,5 @@ app.get("/books/borrowed", authenticate, (req, res) => {
 
 app.listen(5000, async () => {
   await createDefaultAdmin();
-  console.log("🚀 Server running on http://localhost:5000");
+  console.log("Server running on http://localhost:5000");
 });

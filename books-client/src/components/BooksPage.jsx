@@ -51,6 +51,7 @@ function BooksPage() {
                 borderRadius: 2,
                 mb: 1,
                 bgcolor: "#fafafa",
+                color: "black",
               }}
               secondaryAction={
                 role === "admin" && (

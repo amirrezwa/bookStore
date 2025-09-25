@@ -11,6 +11,7 @@ const pool = new Pool({
   // جدول کاربران
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       email TEXT PRIMARY KEY,
       password TEXT NOT NULL,
       role TEXT NOT NULL
@@ -20,6 +21,7 @@ const pool = new Pool({
   // جدول کتاب‌ها
   await pool.query(`
     CREATE TABLE IF NOT EXISTS books (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
       author TEXT NOT NULL
@@ -29,10 +31,11 @@ const pool = new Pool({
   // جدول کتاب‌های قرض گرفته شده
   await pool.query(`
     CREATE TABLE IF NOT EXISTS borrowed_books (
-      id SERIAL PRIMARY KEY,
-      user_email TEXT REFERENCES users(email),
-      book_id INT REFERENCES books(id),
-      borrowed_at TIMESTAMP DEFAULT NOW()
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_email TEXT REFERENCES users(email),
+    book_id UUID REFERENCES books(id),
+    borrowed_at TIMESTAMP DEFAULT NOW(),
+    returned BOOLEAN DEFAULT FALSE 
     )
   `);
 
@@ -46,9 +49,6 @@ const pool = new Pool({
     await pool.query(
       "INSERT INTO users(email, password, role) VALUES($1, $2, 'admin')",
       ["amirrezwanoori@gmail.com", hashed]
-    );
-    console.log(
-      "✅ Default admin created: amirrezwanoori@gmail.com / 12345678"
     );
   }
 })();

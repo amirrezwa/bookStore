@@ -5,6 +5,9 @@ import {
   List,
   ListItem,
   ListItemText,
+  Paper,
+  Box,
+  Divider,
 } from "@mui/material";
 
 function BorrowedBooksPage() {
@@ -16,7 +19,7 @@ function BorrowedBooksPage() {
       const res = await fetch("http://localhost:5000/books/borrowed", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Failed to fetch");
+      if (!res.ok) throw new Error("Failed to fetch borrowed books");
       const data = await res.json();
       setBorrowedBooks(data);
     } catch (err) {
@@ -30,35 +33,45 @@ function BorrowedBooksPage() {
   }, []);
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, ml: 50 }}>
+    <Container maxWidth="md" sx={{ mt: 4, ml: 40 }}>
       <Typography variant="h4" gutterBottom>
         My Borrowed Books 📚
       </Typography>
-      <List>
-        {borrowedBooks.length === 0 ? (
-          <Typography>No borrowed books found 📭</Typography>
-        ) : (
-          borrowedBooks.map((b) => (
-            <ListItem
+      <Divider sx={{ mb: 2 }} />
+      {borrowedBooks.length === 0 ? (
+        <Typography variant="body1" color="textSecondary">
+          You haven't borrowed any books yet 📭
+        </Typography>
+      ) : (
+        <List>
+          {borrowedBooks.map((b) => (
+            <Paper
               key={b.id}
-              sx={{ border: "1px solid #eee", mb: 1, borderRadius: 2 }}
+              sx={{
+                mb: 2,
+                p: 2,
+                borderRadius: 2,
+                bgcolor: "#fafafa",
+              }}
             >
-              <ListItemText
-                primary={b.title}
-                secondary={
-                  <>
-                    <div>
-                      Borrowed at: {new Date(b.borrowed_at).toLocaleString()}
-                    </div>
-                    <div>Returned: {b.returned ? "Yes" : "No"}</div>
-                    <div>Lender: {b.lender_email}</div>
-                  </>
-                }
-              />
-            </ListItem>
-          ))
-        )}
-      </List>
+              <ListItem disablePadding>
+                <ListItemText
+                  primary={b.title}
+                  secondary={
+                    <Box sx={{ mt: 1 }}>
+                      <div>
+                        Borrowed at: {new Date(b.borrowed_at).toLocaleString()}
+                      </div>
+                      <div>Returned: {b.returned ? "Yes ✅" : "No ❌"}</div>
+                      <div>Lender: {b.lender_email}</div>
+                    </Box>
+                  }
+                />
+              </ListItem>
+            </Paper>
+          ))}
+        </List>
+      )}
     </Container>
   );
 }

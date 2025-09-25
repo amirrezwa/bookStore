@@ -47,7 +47,6 @@ function LentPage() {
     }
   };
 
-  // گروه‌بندی بر اساس user_email برای نمایش مرتب
   const grouped = lentRecords.reduce((acc, rec) => {
     const key = rec.user_email;
     acc[key] = acc[key] || [];
@@ -56,7 +55,7 @@ function LentPage() {
   }, {});
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, ml: 50 }}>
+    <Container maxWidth="md" sx={{ mt: 4, ml: 35 }}>
       <Typography variant="h4" gutterBottom>
         Lent Books — Your Lends 📚
       </Typography>
@@ -79,6 +78,7 @@ function LentPage() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    color: "black",
                   }}
                 >
                   <ListItemText

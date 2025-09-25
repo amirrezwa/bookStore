@@ -50,6 +50,7 @@ function UsersPage() {
               borderRadius: 2,
               mb: 1,
               bgcolor: "#fafafa",
+              color: "black",
             }}
           >
             <ListItemText primary={u.email} secondary={u.role} />

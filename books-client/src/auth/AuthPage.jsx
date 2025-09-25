@@ -36,6 +36,7 @@ export default function AuthPage() {
         if (isLogin) {
           localStorage.setItem("token", data.token);
           localStorage.setItem("role", data.role);
+          localStorage.setItem("email", email);
           navigate("/books");
         } else {
           setMessage("Registered ✅");
