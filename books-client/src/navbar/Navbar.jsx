@@ -6,6 +6,7 @@ import {
   MenuItem,
   Menu,
   Avatar,
+  Typography,
 } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
@@ -36,17 +37,28 @@ function Navbar() {
     logout();
   };
 
-  const getButtonColor = (path) => {
-    return location.pathname === path ? "secondary" : "inherit";
-  };
-
   return (
-    <AppBar position="fixed" sx={{ top: 0, left: 0, right: 0 }}>
+    <AppBar
+      position="fixed"
+      sx={{
+        top: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: "#1976d2",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+      }}
+    >
       <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Box>
+        {/* دکمه‌ها */}
+        <Box sx={{ display: "flex", gap: 2 }}>
           <Button
-            color={getButtonColor("/books")}
+            color="inherit"
             onClick={() => navigate("/books")}
+            sx={{
+              fontWeight: location.pathname === "/books" ? "bold" : "normal",
+              color: location.pathname === "/books" ? "#000000" : "#fff",
+              "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+            }}
           >
             Books
           </Button>
@@ -54,26 +66,37 @@ function Navbar() {
           {role === "admin" && (
             <>
               <Button
-                color={getButtonColor("/add-book")}
-                onClick={() => navigate("/add-book")}
-              >
-                Add Book
-              </Button>
-              <Button
-                color={getButtonColor("/users")}
+                color="inherit"
                 onClick={() => navigate("/users")}
+                sx={{
+                  fontWeight:
+                    location.pathname === "/users" ? "bold" : "normal",
+                  color: location.pathname === "/users" ? "#000000" : "#fff",
+                  "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+                }}
               >
                 Users
               </Button>
               <Button
-                color={getButtonColor("/borrow")}
+                color="inherit"
                 onClick={() => navigate("/borrow")}
+                sx={{
+                  fontWeight:
+                    location.pathname === "/borrow" ? "bold" : "normal",
+                  color: location.pathname === "/borrow" ? "#000000" : "#fff",
+                  "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+                }}
               >
-                Borrow (lend)
+                Borrow
               </Button>
               <Button
-                color={getButtonColor("/lent")}
+                color="inherit"
                 onClick={() => navigate("/lent")}
+                sx={{
+                  fontWeight: location.pathname === "/lent" ? "bold" : "normal",
+                  color: location.pathname === "/lent" ? "#ffeb3b" : "#fff",
+                  "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+                }}
               >
                 Lent
               </Button>
@@ -82,8 +105,14 @@ function Navbar() {
 
           {role === "user" && (
             <Button
-              color={getButtonColor("/my-borrows")}
+              color="inherit"
               onClick={() => navigate("/my-borrows")}
+              sx={{
+                fontWeight:
+                  location.pathname === "/my-borrows" ? "bold" : "normal",
+                color: location.pathname === "/my-borrows" ? "#000000" : "#fff",
+                "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+              }}
             >
               My Borrowed
             </Button>
@@ -91,9 +120,21 @@ function Navbar() {
         </Box>
 
         {/* پروفایل کاربر */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <span>{email || "User"}</span>{" "}
-          <Avatar sx={{ cursor: "pointer" }} onClick={handleOpen} />
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Typography sx={{ color: "#fff", fontWeight: "500" }}>
+            {email}
+          </Typography>
+          <Avatar
+            sx={{
+              cursor: "pointer",
+              bgcolor: "#ffffff",
+              color: "#1976d2",
+              fontWeight: "bold",
+            }}
+            onClick={handleOpen}
+          >
+            {email[0].toUpperCase()}
+          </Avatar>
           <Menu
             anchorEl={anchorEl}
             open={open}
@@ -102,7 +143,7 @@ function Navbar() {
             transformOrigin={{ vertical: "top", horizontal: "right" }}
           >
             <MenuItem onClick={handleLogout}>
-              <LogoutIcon sx={{ cursor: "pointer" }} />
+              <LogoutIcon sx={{ mr: 1 }} />
               Log Out
             </MenuItem>
           </Menu>

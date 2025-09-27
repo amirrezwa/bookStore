@@ -79,7 +79,7 @@ app.get("/auth/users", authenticate, authorize(["admin"]), (req, res) => {
   res.json(users.map((u) => ({ email: u.email, role: u.role })));
 });
 
-// تغییر نقش کاربر (admin/user) توسط ادمین
+// تغییر نقش کاربر
 app.put(
   "/auth/users/:email/role",
   authenticate,
@@ -90,7 +90,6 @@ app.put(
     const user = users.find((u) => u.email === email);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // نمی‌تونی نقش ادمین پیش‌فرض رو تغییر بدی
     if (user.email === "amirrezwanoori@gmail.com")
       return res.status(403).json({ message: "Cannot change main admin role" });
 
@@ -136,8 +135,6 @@ app.delete("/books/:id", authenticate, authorize(["admin"]), (req, res) => {
 });
 
 // قرض دادن کتاب
-// برای ذخیره، lender_email و borrowed_at اضافه میشه
-// قرض دادن کتاب (یک کتاب فقط یک نفر می‌تواند قرض بگیرد)
 app.post("/books/borrow", authenticate, authorize(["admin"]), (req, res) => {
   const { userEmail, bookId } = req.body;
   const book = books.find((b) => b.id === bookId);
@@ -145,7 +142,6 @@ app.post("/books/borrow", authenticate, authorize(["admin"]), (req, res) => {
   if (!book || !user)
     return res.status(404).json({ message: "Book or user not found" });
 
-  // چک می‌کنیم که کتاب هنوز برگشت داده نشده قرض شده نباشد
   const isCurrentlyBorrowed = borrowedBooks.some(
     (b) => b.bookId === bookId && b.returned === false
   );
@@ -179,21 +175,24 @@ app.post(
   }
 );
 
-// مشاهده لیست قرض‌ها
-// اگر admin باشه: فقط رکوردهایی که خودش قرض داده (lender_email === req.user.email)
-// اگر user باشه: فقط قرض‌های خودش (user_email === req.user.email)
+// لیست قرض‌ها + سرچ
 app.get("/books/borrowed", authenticate, (req, res) => {
+  let results = [];
+
   if (req.user.role === "admin") {
-    const myLents = borrowedBooks.filter(
-      (bb) => bb.lender_email === req.user.email
-    );
-    return res.json(myLents);
+    results = borrowedBooks; // همه رو ببینه
+  } else {
+    results = borrowedBooks.filter((bb) => bb.user_email === req.user.email);
   }
-  // برای کاربر معمولی فقط کتاب‌هایی که خودش قرض گرفته
-  const myBorrows = borrowedBooks.filter(
-    (bb) => bb.user_email === req.user.email
-  );
-  res.json(myBorrows);
+
+  const { email } = req.query;
+  if (email && req.user.role === "admin") {
+    results = results.filter((bb) =>
+      bb.user_email.toLowerCase().includes(email.toLowerCase())
+    );
+  }
+
+  res.json(results);
 });
 
 app.listen(5000, async () => {

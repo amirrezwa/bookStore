@@ -2,23 +2,32 @@ import { useEffect, useState } from "react";
 import {
   Container,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
+  Divider,
   Button,
   Box,
-  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
+import { CheckCircle, Cancel } from "@mui/icons-material";
 
 function LentPage() {
   const token = localStorage.getItem("token");
   const [lentRecords, setLentRecords] = useState([]);
+  const [searchEmail, setSearchEmail] = useState("");
 
-  const fetchLents = async () => {
+  const fetchLents = async (email = "") => {
     try {
-      const res = await fetch("http://localhost:5000/books/borrowed", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `http://localhost:5000/books/borrowed${email ? `?email=${email}` : ""}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       setLentRecords(data);
@@ -47,68 +56,101 @@ function LentPage() {
     }
   };
 
-  const grouped = lentRecords.reduce((acc, rec) => {
-    const key = rec.user_email;
-    acc[key] = acc[key] || [];
-    acc[key].push(rec);
-    return acc;
-  }, {});
+  const handleSearch = () => {
+    fetchLents(searchEmail);
+  };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, ml: 35 }}>
-      <Typography variant="h4" gutterBottom>
+    <Container maxWidth="lg" sx={{ mt: 6, ml: 20 }}>
+      <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: 700 }}>
         Lent Books — Your Lends 📚
       </Typography>
-      <Divider sx={{ mb: 2 }} />
-      {Object.keys(grouped).length === 0 ? (
-        <Typography>No lends found 📭</Typography>
-      ) : (
-        Object.entries(grouped).map(([userEmail, records]) => (
-          <Box key={userEmail} sx={{ mb: 3 }}>
-            <Typography variant="h6">{userEmail}</Typography>
-            <List>
-              {records.map((r) => (
-                <ListItem
-                  key={r.id}
-                  sx={{
-                    border: "1px solid #eee",
-                    borderRadius: 2,
-                    mb: 1,
-                    bgcolor: "#fafafa",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    color: "black",
-                  }}
-                >
-                  <ListItemText
-                    primary={r.title}
-                    secondary={
-                      <>
-                        <div>
-                          Borrowed at:{" "}
-                          {new Date(r.borrowed_at).toLocaleString()}
-                        </div>
-                        <div>Returned: {r.returned ? "Yes" : "No"}</div>
-                      </>
-                    }
-                  />
-                  <Box>
+
+      <Divider sx={{ mb: 3 }} />
+
+      {/* Search bar */}
+      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+        <input
+          type="text"
+          placeholder="Search by user email..."
+          value={searchEmail}
+          onChange={(e) => setSearchEmail(e.target.value)}
+          style={{
+            flex: 1,
+            padding: "8px",
+            borderRadius: "6px",
+            border: "1px solid #ccc",
+          }}
+        />
+        <Button variant="contained" onClick={handleSearch}>
+          Search
+        </Button>
+      </Box>
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: "#1976d2" }}>
+              <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                User Email
+              </TableCell>
+              <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                Book Title
+              </TableCell>
+              <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                Borrowed At
+              </TableCell>
+              <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                Returned
+              </TableCell>
+              <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                Actions
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {lentRecords.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center">
+                  No lends found 📭
+                </TableCell>
+              </TableRow>
+            ) : (
+              lentRecords.map((r) => (
+                <TableRow key={r.id} hover>
+                  <TableCell>{r.user_email}</TableCell>
+                  <TableCell>{r.title}</TableCell>
+                  <TableCell>
+                    {new Date(r.borrowed_at).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    {r.returned ? (
+                      <CheckCircle color="success" />
+                    ) : (
+                      <Cancel color="error" />
+                    )}
+                  </TableCell>
+                  <TableCell>
                     {!r.returned && (
                       <Button
                         variant="contained"
+                        color="success"
                         onClick={() => returnBook(r.id)}
+                        sx={{
+                          textTransform: "none",
+                          "&:hover": { bgcolor: "#2e7d32" },
+                        }}
                       >
                         Mark Returned
                       </Button>
                     )}
-                  </Box>
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-        ))
-      )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Container>
   );
 }
