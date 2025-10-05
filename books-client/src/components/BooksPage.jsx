@@ -4,13 +4,7 @@ import {
   Typography,
   Divider,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   Box,
-  IconButton,
   Table,
   TableBody,
   TableCell,
@@ -18,33 +12,43 @@ import {
   TableHead,
   TableRow,
   Paper,
+  IconButton,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
-import { Delete, Edit } from "@mui/icons-material";
+import { Delete, Edit, Search } from "@mui/icons-material";
 
-function BooksPage() {
+function BooksPage({ refreshFlag }) {
   const [books, setBooks] = useState([]);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [error, setError] = useState("");
   const [editingBook, setEditingBook] = useState(null);
+  const [requestedBooks, setRequestedBooks] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(""); // 👈 برای سرچ
+  const [filteredBooks, setFilteredBooks] = useState([]);
 
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  // گرفتن کتاب‌ها
   const fetchBooks = () => {
     fetch("http://localhost:5000/books", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => setBooks(data))
+      .then((data) => {
+        setBooks(data);
+        setFilteredBooks(data); // 👈 مقدار اولیه برای فیلترشده
+      })
       .catch((err) => console.error(err));
   };
 
-  useEffect(() => fetchBooks(), []);
+  useEffect(() => fetchBooks(), [refreshFlag]);
 
-  // حذف کتاب
   const deleteBook = (id) => {
     fetch(`http://localhost:5000/books/${id}`, {
       method: "DELETE",
@@ -52,7 +56,6 @@ function BooksPage() {
     }).then(() => fetchBooks());
   };
 
-  // باز کردن مودال برای اضافه کردن
   const handleAddOpen = () => {
     setEditingBook(null);
     setTitle("");
@@ -60,7 +63,6 @@ function BooksPage() {
     setOpen(true);
   };
 
-  // باز کردن مودال برای ویرایش
   const handleEditOpen = (book) => {
     setEditingBook(book);
     setTitle(book.title);
@@ -68,54 +70,79 @@ function BooksPage() {
     setOpen(true);
   };
 
-  // ذخیره (Add یا Edit)
-  const handleSave = (e) => {
-    e.preventDefault();
+  const handleSave = () => {
     setError("");
-
-    if (editingBook) {
-      fetch(`http://localhost:5000/books/${editingBook.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ title, author }),
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to update book");
-          return res.json();
-        })
-        .then(() => {
-          setOpen(false);
-          setEditingBook(null);
-          fetchBooks();
-        })
-        .catch((err) => setError(err.message));
-    } else {
-      fetch("http://localhost:5000/books", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ title, author }),
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to add book");
-          return res.json();
-        })
-        .then(() => {
-          setOpen(false);
-          fetchBooks();
-        })
-        .catch((err) => setError(err.message));
+    if (!title || !author) {
+      setError("Please fill all fields");
+      return;
     }
+
+    const url = editingBook
+      ? `http://localhost:5000/books/${editingBook.id}`
+      : "http://localhost:5000/books";
+    const method = editingBook ? "PUT" : "POST";
+
+    fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ title, author }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed");
+        return res.json();
+      })
+      .then(() => {
+        setOpen(false);
+        setEditingBook(null);
+        fetchBooks();
+      })
+      .catch((err) => setError(err.message));
+  };
+
+  const requestBorrow = (bookId) => {
+    fetch("http://localhost:5000/books/request", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ bookId }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message);
+        }
+        setRequestedBooks((prev) => [...prev, bookId]);
+        setBooks((prev) => prev.filter((b) => b.id !== bookId));
+        setFilteredBooks((prev) => prev.filter((b) => b.id !== bookId));
+        alert("Request sent ✅");
+      })
+      .catch((err) => alert(err.message));
+  };
+
+  // 👇 تابع سرچ
+  const handleSearch = () => {
+    if (!searchTerm.trim()) {
+      setFilteredBooks(books);
+      return;
+    }
+
+    const lower = searchTerm.toLowerCase();
+    const result = books.filter(
+      (b) =>
+        b.title.toLowerCase().includes(lower) ||
+        b.author.toLowerCase().includes(lower)
+    );
+    setFilteredBooks(result);
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, ml: 50 }}>
-      {/* تیتر و دکمه Add */}
+    <Container maxWidth="md" sx={{ mt: 4, ml: 40 }}>
+      {/* بالا - عنوان و دکمه اضافه کردن */}
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Typography variant="h4">Book Store 📚</Typography>
         {role === "admin" && (
@@ -125,9 +152,25 @@ function BooksPage() {
         )}
       </Box>
 
+      {/* بخش سرچ */}
+      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+        <TextField
+          fullWidth
+          placeholder="Search by title or author..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <Button
+          variant="contained"
+          startIcon={<Search />}
+          onClick={handleSearch}
+        >
+          Search
+        </Button>
+      </Box>
+
       <Divider sx={{ mb: 2 }} />
 
-      {/* جدول کتاب‌ها */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -138,41 +181,51 @@ function BooksPage() {
               <TableCell sx={{ color: "white", fontWeight: "bold" }}>
                 Author
               </TableCell>
-              {role === "admin" && (
-                <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-                  Actions
-                </TableCell>
-              )}
+              <TableCell sx={{ color: "white", fontWeight: "bold" }}>
+                Actions
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {books.length === 0 ? (
+            {filteredBooks.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={role === "admin" ? 3 : 2}>
+                <TableCell colSpan={3} align="center">
                   No books found 📭
                 </TableCell>
               </TableRow>
             ) : (
-              books.map((book) => (
+              filteredBooks.map((book) => (
                 <TableRow key={book.id} hover>
                   <TableCell>{book.title}</TableCell>
                   <TableCell>{book.author}</TableCell>
-                  {role === "admin" && (
-                    <TableCell>
-                      <IconButton
-                        color="error"
-                        onClick={() => deleteBook(book.id)}
+                  <TableCell>
+                    {role === "admin" ? (
+                      <>
+                        <IconButton
+                          color="error"
+                          onClick={() => deleteBook(book.id)}
+                        >
+                          <Delete />
+                        </IconButton>
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleEditOpen(book)}
+                        >
+                          <Edit />
+                        </IconButton>
+                      </>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        disabled={requestedBooks.includes(book.id)}
+                        onClick={() => requestBorrow(book.id)}
                       >
-                        <Delete />
-                      </IconButton>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleEditOpen(book)}
-                      >
-                        <Edit />
-                      </IconButton>
-                    </TableCell>
-                  )}
+                        {requestedBooks.includes(book.id)
+                          ? "Requested"
+                          : "Request Borrow"}
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -180,7 +233,7 @@ function BooksPage() {
         </Table>
       </TableContainer>
 
-      {/* Dialog برای Add یا Edit */}
+      {/* دیالوگ افزودن/ویرایش کتاب */}
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
@@ -188,11 +241,11 @@ function BooksPage() {
         maxWidth="sm"
       >
         <DialogTitle>
-          {editingBook ? "Edit Book ✏️" : "Add New Book ➕"}
+          {editingBook ? "Edit Book ✏️" : "Add Book ➕"}
         </DialogTitle>
         <DialogContent>
           {error && <Typography color="error">{error}</Typography>}
-          <Box component="form" onSubmit={handleSave} sx={{ mt: 2 }}>
+          <Box sx={{ mt: 2 }}>
             <TextField
               fullWidth
               label="Title"
@@ -212,11 +265,9 @@ function BooksPage() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)} color="secondary">
-            Cancel
-          </Button>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
           <Button onClick={handleSave} variant="contained">
-            {editingBook ? "Save Changes" : "Add"}
+            {editingBook ? "Save" : "Add"}
           </Button>
         </DialogActions>
       </Dialog>

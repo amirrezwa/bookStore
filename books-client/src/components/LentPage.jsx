@@ -30,7 +30,12 @@ function LentPage() {
       );
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
-      setLentRecords(data);
+
+      // فقط درخواست‌های approved یا returned
+      const filtered = data.filter(
+        (r) => r.status === "approved" || r.status === "returned"
+      );
+      setLentRecords(filtered);
     } catch (err) {
       console.error(err);
       setLentRecords([]);
@@ -61,7 +66,7 @@ function LentPage() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 6, ml: 20 }}>
+    <Container maxWidth="lg" sx={{ mt: 6, ml: 35 }}>
       <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: 700 }}>
         Lent Books — Your Lends 📚
       </Typography>
@@ -118,20 +123,20 @@ function LentPage() {
             ) : (
               lentRecords.map((r) => (
                 <TableRow key={r.id} hover>
-                  <TableCell>{r.user_email}</TableCell>
+                  <TableCell>{r.userEmail}</TableCell>
                   <TableCell>{r.title}</TableCell>
                   <TableCell>
-                    {new Date(r.borrowed_at).toLocaleString()}
+                    {new Date(r.requestedAt).toLocaleString()}
                   </TableCell>
                   <TableCell>
-                    {r.returned ? (
+                    {r.status === "returned" ? (
                       <CheckCircle color="success" />
                     ) : (
                       <Cancel color="error" />
                     )}
                   </TableCell>
                   <TableCell>
-                    {!r.returned && (
+                    {r.status !== "returned" && (
                       <Button
                         variant="contained"
                         color="success"

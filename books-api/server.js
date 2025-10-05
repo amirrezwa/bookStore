@@ -1,3 +1,4 @@
+// server.js
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -13,12 +14,12 @@ const SECRET = "my_secret_key";
 
 let users = [];
 let books = [];
-let borrowedBooks = [];
+let borrowRequests = [];
 
+// ساخت ادمین پیش‌فرض
 async function createDefaultAdmin() {
   const email = "amirrezwanoori@gmail.com";
   const password = "12345678";
-
   if (!users.find((u) => u.email === email)) {
     const hashedPassword = await bcrypt.hash(password, 10);
     users.push({ email, password: hashedPassword, role: "admin" });
@@ -48,6 +49,8 @@ function authorize(roles = []) {
   };
 }
 
+// ================== Auth ==================
+
 // ثبت‌نام
 app.post("/auth/register", async (req, res) => {
   const { email, password } = req.body;
@@ -74,43 +77,37 @@ app.post("/auth/login", async (req, res) => {
   res.json({ token, role: user.role, email: user.email });
 });
 
-// گرفتن لیست کاربران (فقط admin)
-app.get("/auth/users", authenticate, authorize(["admin"]), (req, res) => {
-  res.json(users.map((u) => ({ email: u.email, role: u.role })));
+// ================== Books ==================
+
+// گرفتن لیست کتاب‌ها
+app.get("/books", authenticate, (req, res) => {
+  if (req.user.role === "admin") return res.json(books);
+
+  const pendingOrApproved = borrowRequests
+    .filter(
+      (r) =>
+        r.userEmail === req.user.email &&
+        (r.status === "pending" || r.status === "approved")
+    )
+    .map((r) => r.bookId);
+
+  res.json(
+    books.filter((b) => b.available && !pendingOrApproved.includes(b.id))
+  );
 });
 
-// تغییر نقش کاربر
-app.put(
-  "/auth/users/:email/role",
-  authenticate,
-  authorize(["admin"]),
-  (req, res) => {
-    const { email } = req.params;
-    const { role } = req.body;
-    const user = users.find((u) => u.email === email);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (user.email === "amirrezwanoori@gmail.com")
-      return res.status(403).json({ message: "Cannot change main admin role" });
-
-    user.role = role;
-    res.json({ message: "Role updated", email: user.email, role: user.role });
-  }
-);
-
-// کتاب‌ها
-app.get("/books", authenticate, (req, res) => res.json(books));
-
+// اضافه کردن کتاب
 app.post("/books", authenticate, authorize(["admin"]), (req, res) => {
   const { title, author } = req.body;
   if (books.some((b) => b.title === title && b.author === author))
     return res.status(400).json({ message: "Book already exists" });
 
-  const newBook = { id: uuidv4(), title, author };
+  const newBook = { id: uuidv4(), title, author, available: true };
   books.push(newBook);
   res.json(newBook);
 });
 
+// ویرایش کتاب
 app.put("/books/:id", authenticate, authorize(["admin"]), (req, res) => {
   const { id } = req.params;
   const { title, author } = req.body;
@@ -127,72 +124,133 @@ app.put("/books/:id", authenticate, authorize(["admin"]), (req, res) => {
   res.json(book);
 });
 
+// حذف کتاب
 app.delete("/books/:id", authenticate, authorize(["admin"]), (req, res) => {
   const { id } = req.params;
   books = books.filter((b) => b.id !== id);
-  borrowedBooks = borrowedBooks.filter((bb) => bb.bookId !== id);
+  borrowRequests = borrowRequests.filter((r) => r.bookId !== id);
   res.json({ message: "Book deleted" });
 });
 
-// قرض دادن کتاب
-app.post("/books/borrow", authenticate, authorize(["admin"]), (req, res) => {
-  const { userEmail, bookId } = req.body;
+// ================== Borrow Requests ==================
+
+// کاربر درخواست قرض کتاب بده
+app.post("/books/request", authenticate, authorize(["user"]), (req, res) => {
+  const { bookId } = req.body;
   const book = books.find((b) => b.id === bookId);
-  const user = users.find((u) => u.email === userEmail);
-  if (!book || !user)
-    return res.status(404).json({ message: "Book or user not found" });
+  if (!book || !book.available)
+    return res.status(404).json({ message: "Book not available" });
 
-  const isCurrentlyBorrowed = borrowedBooks.some(
-    (b) => b.bookId === bookId && b.returned === false
-  );
-  if (isCurrentlyBorrowed)
-    return res.status(400).json({ message: "Book is already borrowed" });
-
-  borrowedBooks.push({
+  borrowRequests.push({
     id: uuidv4(),
+    userEmail: req.user.email,
     bookId,
     title: book.title,
-    user_email: userEmail,
-    lender_email: req.user.email,
-    returned: false,
-    borrowed_at: new Date().toISOString(),
+    requestedAt: new Date(),
+    status: "pending",
   });
-  res.json({ message: "Book borrowed" });
+
+  res.json({ message: "Request sent" });
 });
 
-// برگشت کتاب
+// گرفتن درخواست‌های pending برای ادمین
+app.get("/books/requests", authenticate, authorize(["admin"]), (req, res) => {
+  const pending = borrowRequests.filter((r) => r.status === "pending");
+  res.json(pending);
+});
+
+// تایید درخواست
 app.post(
-  "/books/return/:id",
+  "/books/requests/:id/approve",
   authenticate,
   authorize(["admin"]),
   (req, res) => {
-    const { id } = req.params;
-    const borrow = borrowedBooks.find((bb) => bb.id === id);
-    if (!borrow) return res.status(404).json({ message: "Borrow not found" });
-    borrow.returned = true;
-    borrow.returned_at = new Date().toISOString();
-    res.json({ message: "Book returned" });
+    const reqIndex = borrowRequests.findIndex((r) => r.id === req.params.id);
+    if (reqIndex === -1)
+      return res.status(404).json({ message: "Request not found" });
+
+    const request = borrowRequests[reqIndex];
+    request.status = "approved";
+
+    const book = books.find((b) => b.id === request.bookId);
+    if (book) book.available = false;
+
+    res.json({ message: "Request approved", request });
   }
 );
 
-// لیست قرض‌ها + سرچ
-app.get("/books/borrowed", authenticate, (req, res) => {
-  let results = [];
+// رد درخواست
+app.post(
+  "/books/requests/:id/reject",
+  authenticate,
+  authorize(["admin"]),
+  (req, res) => {
+    const reqIndex = borrowRequests.findIndex((r) => r.id === req.params.id);
+    if (reqIndex === -1)
+      return res.status(404).json({ message: "Request not found" });
 
-  if (req.user.role === "admin") {
-    results = borrowedBooks; // همه رو ببینه
-  } else {
-    results = borrowedBooks.filter((bb) => bb.user_email === req.user.email);
+    borrowRequests[reqIndex].status = "rejected";
+    res.json({ message: "Request rejected" });
   }
+);
 
+// گرفتن کتاب‌های قرض داده شده (user خودش یا admin)
+app.get("/books/borrowed", authenticate, (req, res) => {
+  if (req.user.role === "admin") {
+    res.json(borrowRequests.filter((r) => r.status === "approved"));
+  } else {
+    res.json(
+      borrowRequests.filter(
+        (r) => r.userEmail === req.user.email && r.status === "approved"
+      )
+    );
+  }
+});
+// گرفتن لیست کاربران (فقط برای ادمین)
+app.get("/auth/users", authenticate, authorize(["admin"]), (req, res) => {
   const { email } = req.query;
-  if (email && req.user.role === "admin") {
-    results = results.filter((bb) =>
-      bb.user_email.toLowerCase().includes(email.toLowerCase())
+  let filteredUsers = users;
+
+  if (email) {
+    filteredUsers = users.filter((u) =>
+      u.email.toLowerCase().includes(email.toLowerCase())
     );
   }
 
-  res.json(results);
+  res.json(filteredUsers);
+});
+// تغییر نقش کاربر
+app.put(
+  "/auth/users/:email/role",
+  authenticate,
+  authorize(["admin"]),
+  (req, res) => {
+    const { email } = req.params;
+    const { role } = req.body;
+
+    const user = users.find((u) => u.email === email);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.role = role;
+    res.json({ message: "Role updated successfully", user });
+  }
+);
+
+// برگشت کتاب
+app.post("/books/return/:id", authenticate, (req, res) => {
+  const borrow = borrowRequests.find(
+    (r) => r.id === req.params.id && r.status === "approved"
+  );
+  if (!borrow) return res.status(404).json({ message: "Not found" });
+
+  if (req.user.role === "user" && borrow.userEmail !== req.user.email)
+    return res.status(403).json({ message: "Not your borrow" });
+
+  borrow.status = "returned";
+  const book = books.find((b) => b.id === borrow.bookId);
+  if (book) book.available = true;
+
+  res.json({ message: "Book returned successfully" });
 });
 
 app.listen(5000, async () => {

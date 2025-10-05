@@ -8,6 +8,7 @@ import {
   Paper,
   Box,
   Divider,
+  Button,
 } from "@mui/material";
 
 function BorrowedBooksPage() {
@@ -21,7 +22,8 @@ function BorrowedBooksPage() {
       });
       if (!res.ok) throw new Error("Failed to fetch borrowed books");
       const data = await res.json();
-      setBorrowedBooks(data);
+      // فقط کتاب‌های تایید شده (approved) و برگردانده نشده رو نمایش بده
+      setBorrowedBooks(data.filter((b) => b.status === "approved"));
     } catch (err) {
       console.error(err);
       setBorrowedBooks([]);
@@ -31,6 +33,21 @@ function BorrowedBooksPage() {
   useEffect(() => {
     fetchBorrowedBooks();
   }, []);
+
+  const returnBook = async (id) => {
+    try {
+      const res = await fetch(`http://localhost:5000/books/return/${id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to return book");
+      await fetchBorrowedBooks();
+      alert("Book returned ✅");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to return book");
+    }
+  };
 
   return (
     <Container maxWidth="md" sx={{ mt: 4, ml: 40 }}>
@@ -63,7 +80,15 @@ function BorrowedBooksPage() {
                         Borrowed at: {new Date(b.borrowed_at).toLocaleString()}
                       </div>
                       <div>Returned: {b.returned ? "Yes ✅" : "No ❌"}</div>
-                      <div>Lender: {b.lender_email}</div>
+                      {!b.returned && (
+                        <Button
+                          variant="contained"
+                          sx={{ mt: 1 }}
+                          onClick={() => returnBook(b.id)}
+                        >
+                          Return Book
+                        </Button>
+                      )}
                     </Box>
                   }
                 />

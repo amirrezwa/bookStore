@@ -79,16 +79,22 @@ function Navbar() {
               </Button>
               <Button
                 color="inherit"
-                onClick={() => navigate("/borrow")}
+                onClick={() => navigate("/pendingrequestspage")}
                 sx={{
                   fontWeight:
-                    location.pathname === "/borrow" ? "bold" : "normal",
-                  color: location.pathname === "/borrow" ? "#000000" : "#fff",
+                    location.pathname === "/pendingrequestspage"
+                      ? "bold"
+                      : "normal",
+                  color:
+                    location.pathname === "/pendingrequestspage"
+                      ? "#000000"
+                      : "#fff",
                   "&:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
                 }}
               >
-                Borrow
+                pendingrequestspage
               </Button>
+
               <Button
                 color="inherit"
                 onClick={() => navigate("/lent")}

@@ -16,20 +16,29 @@ function BorrowPage() {
   const [selectedBook, setSelectedBook] = useState("");
 
   useEffect(() => {
+    // گرفتن لیست کاربران
     fetch("http://localhost:5000/auth/users", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => setUsers(data));
+      .then((data) => setUsers(data))
+      .catch((err) => console.error(err));
 
+    // گرفتن لیست کتاب‌ها
     fetch("http://localhost:5000/books", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => setBooks(data));
-  }, []);
+      .then((data) => setBooks(data))
+      .catch((err) => console.error(err));
+  }, [token]);
 
   const borrowBook = () => {
+    if (!selectedUser || !selectedBook) {
+      alert("Please select both user and book");
+      return;
+    }
+
     fetch("http://localhost:5000/books/borrow", {
       method: "POST",
       headers: {
@@ -37,7 +46,18 @@ function BorrowPage() {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ userEmail: selectedUser, bookId: selectedBook }),
-    }).then(() => alert("Book borrowed ✅"));
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to borrow book");
+        return res.json();
+      })
+      .then(() => {
+        alert("Book borrowed ✅");
+        // حذف کتاب قرض داده شده از لیست
+        setBooks((prevBooks) => prevBooks.filter((b) => b.id !== selectedBook));
+        setSelectedBook(""); // ریست انتخاب کتاب
+      })
+      .catch((err) => alert(err.message));
   };
 
   return (

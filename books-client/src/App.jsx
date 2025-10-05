@@ -7,6 +7,7 @@ import BorrowPage from "./components/BorrowPage";
 import AuthPage from "./auth/AuthPage";
 import BorrowedBooksPage from "./components/BorrowedBooksPage";
 import LentPage from "./components/LentPage";
+import PendingRequestsPage from "./components/PendingRequestsPage";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/borrow" element={<BorrowPage />} />
         <Route path="/my-borrows" element={<BorrowedBooksPage />} />
         <Route path="/lent" element={<LentPage />} />
+        <Route path="/pendingrequestspage" element={<PendingRequestsPage />} />
       </Routes>
     </Router>
   );
